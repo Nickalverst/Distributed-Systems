@@ -154,7 +154,6 @@ class RaftNode:
         return self.current_term, False
         
     def __become_leader(self):
-        """Função chamada quando um candidato vence a eleição."""
         with self.lock:
             self.state = NodeState.LEADER
         if self.timer:
@@ -166,17 +165,15 @@ class RaftNode:
             self.next_index[uri] = last_log_index
             self.match_index[uri] = -1
 
-        # trocando lider
         ns = Pyro5.api.locate_ns()
         ns.register("leader", self.uri)
         print(f"Node {self.node_name} is now the leader for term {self.current_term}!")
-        # Inicie o envio de heartbeats para os seguidores usando PyRO
+
         heartbeat_thread = threading.Thread(
             target=self.__heartbeat_loop,
             daemon=True
         )
         heartbeat_thread.start()
-        # Você pode usar um timer para enviar heartbeats periodicamente
 
     @Pyro5.api.expose
     def append_entries(self, term, leader_id, prev_log_index, prev_log_term, entries, leader_commit):
@@ -280,7 +277,7 @@ class RaftNode:
             # Verifica se existe um índice N > commit_index que está na maioria dos seguidores 
             with self.lock:
                 for n in range(len(self.log) - 1, self.commit_index, -1):
-                    count = 1  # O próprio líder conta como 1
+                    count = 1 
                     for m_idx in self.match_index.values():
                         if m_idx >= n:
                             count += 1
@@ -291,7 +288,7 @@ class RaftNode:
                         print(f"Log COMMITTED up to index {n} by the majority!")
                         break
 
-            time.sleep(0.5)  # Intervalo de envio de mensagens de autoridade
+            time.sleep(0.5) 
             
 def main():
     raft_node = None

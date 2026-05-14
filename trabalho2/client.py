@@ -13,7 +13,6 @@ def send_command_to_cluster(command):
             ns = Pyro5.api.locate_ns()
             leader_uri = ns.lookup("leader")
             
-            # Cria um proxy para se comunicar com o nó líder
             with Pyro5.api.Proxy(leader_uri) as leader:
                 success = leader.append_log(command)
                 
@@ -21,18 +20,15 @@ def send_command_to_cluster(command):
                     print(f"Success: Command '{command}' accepted by leader.")
                     return True
                 else:
-                    # Caso o nó encontrado não seja mais o líder (stale registration)
                     print("The node found is no longer the leader. Retrying...")
                     
         except Pyro5.errors.NamingError:
-            # Ocorre durante eleição
             print("Warning: Leader not found in Name Server. Election in progress? Retrying in 1s...")
         except Pyro5.errors.CommunicationError:
             print("Communication error: Check if Name Server and nodes are active. Retrying...")
         except Exception as e:
             print(f"Unexpected error: {e}. Retrying...")
             
-        # Espera um curto período antes da próxima tentativa
         time.sleep(1)
 
 if __name__ == "__main__":
