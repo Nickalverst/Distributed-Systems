@@ -3,12 +3,14 @@ import sys
 import pika
 import json
 import threading
-from protocol import PromotionReceivedEvent, VoteEvent, asdict
+from protocol import PromotionReceivedEvent, PromotionPublishedEvent, VoteEvent, asdict
 from keys import load_private_key, load_public_key
 from flask import Flask, request, jsonify, Response, stream_with_context
 from queue import Queue
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 private_key = load_private_key('gateway')
 promocao_public_key = load_public_key('promocao')
@@ -32,14 +34,18 @@ def cadastrar_promocao():
     if request.method == 'POST':
         data = request.get_json()
 
+        # Gateway sends the event as-is, without modifying or signing it. 
+        # The Promotion service will validate the signature from the STORE, not from the Gateway.
         event = PromotionReceivedEvent(
             promotion_id=data['promotion_id'],
             category=data['category'],
             product_name=data['product_name'],
-            loja_email=data.get('loja_email', '')
+            store_email=data.get('store_email', ''),
+            signature=data.get('signature')
         )
 
-        event.sign_event(private_key)
+        if not event.signature:
+            return jsonify({'status': 'error', 'message': 'Promoção sem assinatura digital da loja.'}), 400
 
         pub_channel.basic_publish(
             exchange=exchange_name,
@@ -105,20 +111,33 @@ def remover_interesse(categoria):
 @app.route('/sse', methods=['GET'])
 def sse():
     q = Queue()
-    user_id = request.args.get('user_id')
+    #Testar sem esse anonymous, não lembro mais porque coloquei isso 
+    user_id = request.args.get('user_id', 'anonymous')
     with clientes_lock:
         clientes_sse[user_id] = q
 
     def stream():
         try:
+            # Envia um heartbeat inicial para o browser reconhecer a conexão
+            yield ": heartbeat\n\n"
+            
             while True:
-                data = q.get()
-                yield f"data: {json.dumps(data)}\n\n"
+                try:
+                    # Heartbeat a cada 30s para manter conexão viva
+                    data = q.get(timeout=30)
+                    yield f"data: {json.dumps(data)}\n\n"
+                except:
+                    yield ": heartbeat\n\n"
         except GeneratorExit:
+            pass
+        finally:
             with clientes_lock:
                 clientes_sse.pop(user_id, None)
 
-    return Response(stream_with_context(stream()), mimetype='text/event-stream')
+    return Response(stream_with_context(stream()), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    })
 
 def main():
     def start_consumer():
@@ -140,7 +159,7 @@ def main():
             routing_key = method.routing_key
 
             if routing_key == 'promocao.publicada':
-                event = PromotionReceivedEvent(**data)
+                event = PromotionPublishedEvent(**data)
                 if not event.is_signature_valid(promocao_public_key):
                     print(f"[!] Invalid signature. Discarding.")
                     return
@@ -155,7 +174,8 @@ def main():
                                 'type': 'new_promotion',
                                 'promotion_id': event.promotion_id,
                                 'category': event.category,
-                                'product_name': event.product_name
+                                'product_name': event.product_name,
+                                'is_hot_deal': data.get('is_hot_deal', False)
                             })
 
             elif routing_key in ('promocao.destaque', 'notificacao.hotdeal'):
@@ -166,7 +186,8 @@ def main():
                             'type': 'hot_deal',
                             'promotion_id': data['promotion_id'],
                             'category': data['category'],
-                            'product_name': data['product_name']
+                            'product_name': data['product_name'],
+                            'is_hot_deal': True
                         })
 
             elif routing_key == 'promocao.categoria':

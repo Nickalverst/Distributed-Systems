@@ -19,7 +19,8 @@ from protocol import VoteEvent, BaseEvent, asdict
 from keys import load_private_key, load_public_key
 
 # Set the number of votes required to become a hot deal
-HOT_DEAL_THRESHOLD = 2
+#Gateway vai ter que manter o controle desse valor 
+HOT_DEAL_THRESHOLD = 1
 
 def main():
     private_key = load_private_key('ranking')

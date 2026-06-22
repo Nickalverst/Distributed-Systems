@@ -10,12 +10,12 @@ import os
 import sys
 import pika
 import json
-from protocol import PromotionReceivedEvent, asdict
+from protocol import PromotionReceivedEvent, PromotionPublishedEvent, asdict
 from keys import load_private_key, load_public_key
 
 def main():
     private_key = load_private_key('promocao')
-    gateway_public_key = load_public_key('gateway')
+    store_public_key = load_public_key('store')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
@@ -32,19 +32,28 @@ def main():
         data = json.loads(body)
         event = PromotionReceivedEvent(**data)
         
-        if not event.is_signature_valid(gateway_public_key):
+        if not event.is_signature_valid(store_public_key):
             print(f"[!] Invalid signature for promotion {event.promotion_id}. Discarding.")
             return
         
-        print(f"[✓] Signature valid. Promoção recebida: {event.promotion_id}")
+        print(f"[✓] Store signature valid. Promoção recebida: {event.promotion_id}")
 
         promocoes.append(event)
 
-        event.sign_event(private_key)
+        published_event = PromotionPublishedEvent(
+            promotion_id=event.promotion_id,
+            category=event.category,
+            product_name=event.product_name,
+            store_email=event.store_email
+        )
 
-        channel.basic_publish(exchange='direct_logs',
-                            routing_key='promocao.publicada',
-                            body=json.dumps(asdict(event)))
+        published_event.sign_event(private_key)
+
+        channel.basic_publish(
+            exchange='direct_logs',
+            routing_key='promocao.publicada',
+            body=json.dumps(asdict(published_event))
+        )
         print("[x] Promoção publicada!")
 
     channel.queue_bind(exchange='direct_logs', queue=queue_name, routing_key='promocao.recebida')

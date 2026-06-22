@@ -13,7 +13,7 @@ class BaseEvent:
     promotion_id: str
     category: str
     product_name: str = "Unknown Product"
-    loja_email: str = ""
+    store_email: str = ""
     signature: Optional[str] = None 
 
     def _generate_stable_payload(self) -> bytes:
@@ -62,6 +62,11 @@ class BaseEvent:
 @dataclass
 class PromotionReceivedEvent(BaseEvent):
     product_name: str = "Unknown Product"
+
+#Sent by Promotion when a promotion is published (after receiving valid signature from store) and is received by the gateway 
+@dataclass
+class PromotionPublishedEvent(BaseEvent):
+    pass
 
 #Sent by Gateway when a promotion is voted on by a user. The vote can be +1 (upvote) or -1 (downvote).
 @dataclass
