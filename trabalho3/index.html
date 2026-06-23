@@ -157,6 +157,89 @@
 
   .category-btn.active .cat-badge { display: inline; }
 
+  /* ── user id section ─────────────────────────────────────── */
+  .user-section {
+    margin-bottom: 4px;
+  }
+
+  .user-input-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .user-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  .user-input:focus { border-color: var(--amber-dim); }
+  .user-input::placeholder { color: var(--muted); }
+
+  .user-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .user-confirm-btn {
+    padding: 7px 11px;
+    background: var(--amber);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .user-confirm-btn:hover { background: #e6b830; }
+
+  .user-status {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .user-status.visible { display: flex; }
+
+  .user-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  .user-change-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: var(--font);
+    cursor: pointer;
+    margin-left: auto;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .user-change-btn:hover { color: var(--text); }
+
   /* ── hot deal toggle ──────────────────────────────────────── */
   .hotdeal-toggle {
     display: flex;
@@ -515,6 +598,27 @@
 
   <!-- ── sidebar ────────────────────────────────────────────── -->
   <aside class="sidebar">
+    <div class="sidebar-title">Usuário</div>
+    <div class="user-section">
+      <div class="user-input-row">
+        <input
+          type="text"
+          class="user-input"
+          id="userIdInput"
+          placeholder="Seu ID de usuário"
+          maxlength="40"
+        >
+        <button class="user-confirm-btn" id="userConfirmBtn" onclick="confirmUserId()">OK</button>
+      </div>
+      <div class="user-status" id="userStatus">
+        <div class="user-status-dot"></div>
+        <span id="userStatusLabel"></span>
+        <button class="user-change-btn" onclick="changeUserId()">trocar</button>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
     <div class="sidebar-title">Destaques</div>
     <button class="hotdeal-toggle" id="hotDealToggle">
       <span class="hotdeal-icon">🔥</span>
@@ -587,16 +691,82 @@
   // Default true: preserva o comportamento que já existia (hot deal sempre visível)
   // até o usuário decidir desativar explicitamente.
   let wantsHotDeals = JSON.parse(localStorage.getItem('wants_hotdeals') ?? 'true');
+  let userId = localStorage.getItem('user_id') || '';
   let promos = [];          // promoções carregadas do backend
   let votes  = {};          // { promotion_id: +1|-1 } — votos dados nesta sessão
   let hotDeals = new Set(); // IDs que já viraram hot deal
   let eventSource = null;
 
   /* ── init ────────────────────────────────────────────────── */
+  renderUserId();
   renderCategories();
   renderHotDealToggle();
   loadPromos();
-  connectSSE();
+  if (userId) connectSSE();
+
+  /* ── user id ─────────────────────────────────────────────── */
+  function renderUserId() {
+    const input  = document.getElementById('userIdInput');
+    const status = document.getElementById('userStatus');
+    const label  = document.getElementById('userStatusLabel');
+
+    if (userId) {
+      input.value    = userId;
+      input.disabled = true;
+      label.textContent = userId;
+      status.classList.add('visible');
+    } else {
+      input.disabled = false;
+      status.classList.remove('visible');
+    }
+  }
+
+  function confirmUserId() {
+    const input = document.getElementById('userIdInput');
+    const val   = input.value.trim();
+
+    if (!val) {
+      showToast('Informe um ID de usuário.', 'error');
+      input.focus();
+      return;
+    }
+
+    userId = val;
+    localStorage.setItem('user_id', userId);
+    renderUserId();
+    showToast(`Conectado como "${userId}"`, 'success');
+
+    // reconecta o SSE com o novo user_id
+    connectSSE();
+  }
+
+  function changeUserId() {
+    // fecha SSE antes de trocar o id
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+    userId = '';
+    localStorage.removeItem('user_id');
+
+    const input  = document.getElementById('userIdInput');
+    const status = document.getElementById('userStatus');
+    input.disabled = false;
+    input.value    = '';
+    status.classList.remove('visible');
+
+    const dot   = document.getElementById('sseDot');
+    const label = document.getElementById('sseLabel');
+    dot.className     = 'sse-dot';
+    label.textContent = 'desconectado';
+
+    input.focus();
+  }
+
+  // permite confirmar com Enter no campo
+  document.getElementById('userIdInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmUserId();
+  });
 
   /* ── hot deal toggle ─────────────────────────────────────── */
   function renderHotDealToggle() {
@@ -631,6 +801,11 @@
   }
 
   async function toggleCategory(id, btn) {
+    if (!userId) {
+      showToast('Informe seu ID de usuário antes de seguir categorias.', 'error');
+      document.getElementById('userIdInput').focus();
+      return;
+    }
     const following = followedCategories.has(id);
     const method = following ? 'DELETE' : 'POST';
 
@@ -638,7 +813,7 @@
       const res = await fetch(`${BASE_URL}/interesses`, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: 'user1', category: id })
+        body: JSON.stringify({ user_id: userId, category: id })
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -780,7 +955,7 @@
     const dot   = document.getElementById('sseDot');
     const label = document.getElementById('sseLabel');
 
-    eventSource = new EventSource(`${BASE_URL}/sse?user_id=user1`);
+    eventSource = new EventSource(`${BASE_URL}/sse?user_id=${encodeURIComponent(userId)}`);
 
     eventSource.onopen = () => {
       dot.className   = 'sse-dot connected';

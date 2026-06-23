@@ -18,10 +18,6 @@ import pika
 from protocol import VoteEvent, BaseEvent, asdict
 from keys import load_private_key, load_public_key
 
-# Set the number of votes required to become a hot deal
-#Gateway vai ter que manter o controle desse valor 
-HOT_DEAL_THRESHOLD = 1
-
 def main():
     private_key = load_private_key('ranking')
     gateway_public_key = load_public_key('gateway')
@@ -58,11 +54,14 @@ def main():
         
         if promo_id not in votes_db:
             votes_db[promo_id] = 0
-        
-        votes_db[promo_id] += event.vote
-        print(f"    Total votes: {votes_db[promo_id]}")
 
-        if votes_db[promo_id] >= HOT_DEAL_THRESHOLD and promo_id not in featured_promotions:
+        # Set the number of votes required to become a hot deal
+        current_threshold = event.total_active_users / 2 + 1
+
+        votes_db[promo_id] += event.vote
+        print(f"    Total votes: {votes_db[promo_id]}    Current HOT DEAL threshold: {current_threshold}")
+
+        if votes_db[promo_id] >= current_threshold and promo_id not in featured_promotions:
             featured_promotions.add(promo_id)
             print(f"[!] {promo_id} reached HOT DEAL status! Publishing event...")
             

@@ -77,7 +77,8 @@ def registrar_voto(id):
         promotion_id=id,
         category=categoria,
         vote=vote_value,
-        product_name=produto
+        product_name=produto,
+        total_active_users= len(clientes_sse)  # Count of currently connected users
     )
 
     event.sign_event(private_key)

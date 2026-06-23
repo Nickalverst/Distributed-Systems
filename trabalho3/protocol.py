@@ -72,6 +72,7 @@ class PromotionPublishedEvent(BaseEvent):
 @dataclass
 class VoteEvent(BaseEvent):
     vote: int = 0 # +1 or -1
+    total_active_users: int = 0
 
 #Sent by notification microservice when a promotion is featured or published 
 @dataclass
