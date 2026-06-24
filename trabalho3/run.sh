@@ -21,7 +21,7 @@ source .venv/bin/activate
 GATEWAY_CMD="python3 -m rest_api.gateway"
 RANKING_CMD="python3 -m rest_api.ranking"
 PROMO_CMD="python3 -m rest_api.promocao"
-NOTIF_CMD="python3 -m rest_api.notification"
+NOTIF_CMD="export RESEND_API_KEY='re_BxWEPtsH_3Yhz2gH3AGn9yz1c6GkRXN59' && python3 -m rest_api.notification"
 STORE_CMD="python3 -m store_client"
 FRONT_CMD="python3 -m http.server 8000"
 
@@ -41,9 +41,5 @@ tmux new-window -t promo:6 -n notification "$NOTIF_CMD"
 
 tmux select-window -t promo:5
 tmux attach -t promo
-
-
-
-
 
 echo "Frontend: http://localhost:8000/index.html"

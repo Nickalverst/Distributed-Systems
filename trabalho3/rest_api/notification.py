@@ -77,8 +77,9 @@ def main():
         # Choose the appropriate public key for verification
         public_key = ranking_public_key if is_hot_deal else promocao_public_key
         
+        string_hotdeal_signature = " - HOT DEAL" if is_hot_deal else " - regular promotion"
         if not event.is_signature_valid(public_key):
-            print(f"[!] Invalid signature for promotion {event.promotion_id}. Discarding.")
+            print(f"[!] Invalid signature for promotion {event.promotion_id}{string_hotdeal_signature}. Discarding.")
             return
 
         store_email = event.store_email

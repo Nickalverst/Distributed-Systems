@@ -70,6 +70,8 @@ def main():
                 category=event.category,
                 product_name=event.product_name
             )
+
+            featured_event.sign_event(private_key)
             
             channel.basic_publish(
                 exchange=exchange_name,
