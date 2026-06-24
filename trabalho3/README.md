@@ -32,7 +32,7 @@ pip install -r requirements.txt
 2. Ensure RabbitMQ is available. The Gateway uses RabbitMQ (default hostname `localhost:5672`). You can run a local RabbitMQ with Docker:
 
 ```bash
-docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+sudo docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
 ```
 
 3. Start the Gateway (Flask service) and others microservices (in separate terminals):

@@ -53,10 +53,10 @@ def main():
         promo_id = event.promotion_id
         
         if promo_id not in votes_db:
-            votes_db[promo_id] = 0
+            votes_db[promo_id] = 0 
 
         # Set the number of votes required to become a hot deal
-        current_threshold = event.total_active_users / 2 + 1
+        current_threshold = int(event.total_active_users / 2) + 1
 
         votes_db[promo_id] += event.vote
         print(f"    Total votes: {votes_db[promo_id]}    Current HOT DEAL threshold: {current_threshold}")
