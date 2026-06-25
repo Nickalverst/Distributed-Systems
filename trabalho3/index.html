@@ -829,7 +829,7 @@
       }
       localStorage.setItem('followed_categories', JSON.stringify([...followedCategories]));
     } catch (err) {
-      /* fallback offline: alterna localmente para facilitar testes sem backend */
+      /* fallback offline: alterna localmente pra testar sem backend */
       if (following) {
         followedCategories.delete(id);
         btn.classList.remove('active');

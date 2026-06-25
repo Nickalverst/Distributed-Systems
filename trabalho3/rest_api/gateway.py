@@ -35,8 +35,7 @@ def cadastrar_promocao():
     if request.method == 'POST':
         data = request.get_json()
 
-        # Gateway sends the event as-is, without modifying or signing it. 
-        # The Promotion service will validate the signature from the STORE, not from the Gateway.
+        #Gateway só encaminha, promoção que valida
         event = PromotionReceivedEvent(
             promotion_id=data['promotion_id'],
             category=data['category'],
@@ -81,7 +80,7 @@ def registrar_voto(id):
         category=categoria,
         vote=vote_value,
         product_name=produto,
-        total_active_users= len(clientes_sse),  # Count of currently connected users
+        total_active_users= len(clientes_sse),
         store_email=global_store_email
     )
 
@@ -116,7 +115,7 @@ def remover_interesse(categoria):
 @app.route('/sse', methods=['GET'])
 def sse():
     q = Queue()
-    #Testar sem esse anonymous, não lembro mais porque coloquei isso 
+    
     user_id = request.args.get('user_id', 'anonymous')
     with clientes_lock:
         clientes_sse[user_id] = q
@@ -184,7 +183,7 @@ def main():
                             })
 
             elif routing_key in ('promocao.destaque', 'notificacao.hotdeal'):
-                # Hot deal — todos os conectados recebem, sem filtro
+                # Hot deal - todos os conectados recebem
                 with clientes_lock:
                     for q in clientes_sse.values():
                         q.put({
@@ -196,7 +195,7 @@ def main():
                         })
 
             elif routing_key == 'promocao.categoria':
-                # Notificação de categoria vinda do MS Notificação — filtra por interesse
+                # Notificação de categoria vinda do MS Notificação - filtra por interesse
                 with clientes_lock:
                     for user_id, q in clientes_sse.items():
                         if data['category'] in interesses.get(user_id, set()):

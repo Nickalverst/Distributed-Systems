@@ -4,18 +4,7 @@ set -euo pipefail
 # go to project root
 cd "$(dirname "$0")"
 
-# ---- deps (optional) ----
-#if [ ! -d ".venv" ]; then
-#  python3 -m venv .venv
-#fi
 source .venv/bin/activate
-
-#pip -q install -r requirements.txt
-
-# ---- rabbitmq (optional) ----
-#if ! docker ps --format '{{.Names}}' | grep -q '^rabbit$'; then
-#  docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management >/dev/null
-#fi
 
 # ---- ports / commands ----
 GATEWAY_CMD="python3 -m rest_api.gateway"

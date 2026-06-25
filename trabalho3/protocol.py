@@ -7,13 +7,12 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 
 # 1. Base Class (Fields shared by all events)
-#Sent by Promotion (every published promotion) and Ranking (everytime a promotion is featured) 
 @dataclass
 class BaseEvent:
     promotion_id: str
     category: str
     product_name: str = "Unknown Product"
-    store_email: Optional[str] = None  # Optional field for store email 
+    store_email: Optional[str] = None
     signature: Optional[str] = None 
 
     def _generate_stable_payload(self) -> bytes:
@@ -56,7 +55,7 @@ class BaseEvent:
         except Exception:
             return False
 
-# 2. Specific Events (Clear Contracts)
+# 2. Specific Events
 
 #Sent by Gateway when a new promotion is created 
 @dataclass
@@ -68,7 +67,7 @@ class PromotionReceivedEvent(BaseEvent):
 class PromotionPublishedEvent(BaseEvent):
     pass
 
-#Sent by Gateway when a promotion is voted on by a user. The vote can be +1 (upvote) or -1 (downvote).
+# Sent by Gateway when a promotion is voted on by a user. The vote can be +1 (upvote) or -1 (downvote).
 @dataclass
 class VoteEvent(BaseEvent):
     vote: int = 0 # +1 or -1

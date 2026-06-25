@@ -1,15 +1,3 @@
-# Store Client (external system)
-# Simulates a store that registers promotions by consuming the MS Gateway REST API.
-# The store digitally signs each promotion before sending it, and the backend only accepts
-# promotions whose signature is validated with the corresponding public key.
-#
-# Flow:
-#   1. Store builds the promotion data (PromotionReceivedEvent)
-#   2. Store signs the event with its private key
-#   3. Store sends POST /promocoes to the Gateway with the signed payload
-#   4. Gateway publishes to RabbitMQ -> MS Promotion validates the signature -> publishes promocao.publicada
-#   5. Store receives HTTP confirmation (201) from the Gateway
-
 import sys
 import requests
 from enum import IntEnum
@@ -49,8 +37,7 @@ def register_promotion(private_key, promotion_id, category, product_name, store_
         store_email=store_email
     )
 
-    # Digital signature: ensures authenticity and integrity of the event.
-    # The Gateway/MS Promotion will validate this with the store's public key.
+    # Promoção verifica com a chave publica da loja
     event.sign_event(private_key)
 
     payload = asdict(event)
@@ -101,7 +88,7 @@ def menu():
             continue
 
         try:
-            selected = Category(category_index)   # direct conversion provided by IntEnum
+            selected = Category(category_index)
         except ValueError:
             print("[!] Category index out of range. Try again.")
             continue
