@@ -78,8 +78,10 @@ def main():
         public_key = ranking_public_key if is_hot_deal else promocao_public_key
         
         string_hotdeal_signature = " - HOT DEAL" if is_hot_deal else " - regular promotion"
+        print(f"\n-------------- NEW NOTIFICATION EVENT{string_hotdeal_signature} --------------")
+        
         if not event.is_signature_valid(public_key):
-            print(f"[!] Invalid signature for promotion {event.promotion_id}{string_hotdeal_signature}. Discarding.")
+            print(f"[!] Invalid signature for promotion {event.promotion_id}. Discarding.")
             return
 
         store_email = event.store_email
@@ -112,7 +114,6 @@ def main():
             category=event.category,
             is_hot_deal=is_hot_deal,
             product_name=event.product_name,
-            store_email=store_email
         )
 
         target_routing_key = f"promocao.{notification.category}"
@@ -128,6 +129,7 @@ def main():
         # Hot deal é um destaque global: além de notificar quem segue a categoria,
         # publica também em notificacao.hotdeal para o Gateway repassar via SSE
         # a TODOS os clientes interessados em destaques, independente de categoria.
+        #print("!!!!!!! DELETED ROUTING TO 'notificacao.hotdeal' (global hot deal channel) !!!!!!!!")
         if is_hot_deal:
             print(f"[x] Also routing to 'notificacao.hotdeal' (global hot deal channel)")
             channel.basic_publish(

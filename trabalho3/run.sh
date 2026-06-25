@@ -33,10 +33,9 @@ tmux new-session -d -s promo -n rabbit 'docker ps -q >/dev/null || true; tail -f
 tmux new-window -t promo:1 -n gateway "$GATEWAY_CMD"
 tmux new-window -t promo:2 -n ranking "$RANKING_CMD"
 tmux new-window -t promo:3 -n promocao "$PROMO_CMD"
-tmux new-window -t promo:4 -n store   "$STORE_CMD"
-tmux new-window -t promo:5 -n frontend "$FRONT_CMD"
+tmux new-window -t promo:4 -n frontend "$FRONT_CMD"
+tmux new-window -t promo:5 -n store   "$STORE_CMD"
 
-export RESEND_API_KEY="re_BxWEPtsH_3Yhz2gH3AGn9yz1c6GkRXN59"
 tmux new-window -t promo:6 -n notification "$NOTIF_CMD"
 
 tmux select-window -t promo:5

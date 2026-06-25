@@ -68,7 +68,8 @@ def main():
             featured_event = BaseEvent(
                 promotion_id=promo_id,
                 category=event.category,
-                product_name=event.product_name
+                product_name=event.product_name,
+                store_email=event.store_email
             )
 
             featured_event.sign_event(private_key)

@@ -77,7 +77,12 @@ def menu():
 
     print("=== Store Client (external system) ===")
     print("Each promotion registered here will be signed with the store's private key.")
-    store_email = input("Store e-mail (to receive notifications): ").strip()
+    
+    store_email = ""
+    while not store_email:
+        store_email = input("Store e-mail (to receive notifications): ").strip()
+        if not store_email:
+            print("[!] Store e-mail cannot be empty. Please enter a valid e-mail address.")
 
     while True:
         print("\n--- New promotion ---")

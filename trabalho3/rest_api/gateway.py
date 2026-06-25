@@ -19,6 +19,7 @@ promocoes_validas = []
 interesses = {}
 clientes_sse = {}
 clientes_lock = threading.Lock()
+global_store_email = ""
 
 def create_connection():
     return pika.BlockingConnection(
@@ -43,6 +44,8 @@ def cadastrar_promocao():
             store_email=data.get('store_email', ''),
             signature=data.get('signature')
         )
+        global global_store_email
+        global_store_email = event.store_email
 
         if not event.signature:
             return jsonify({'status': 'error', 'message': 'Promoção sem assinatura digital da loja.'}), 400
@@ -78,7 +81,8 @@ def registrar_voto(id):
         category=categoria,
         vote=vote_value,
         product_name=produto,
-        total_active_users= len(clientes_sse)  # Count of currently connected users
+        total_active_users= len(clientes_sse),  # Count of currently connected users
+        store_email=global_store_email
     )
 
     event.sign_event(private_key)

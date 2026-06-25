@@ -13,7 +13,7 @@ class BaseEvent:
     promotion_id: str
     category: str
     product_name: str = "Unknown Product"
-    store_email: str = ""
+    store_email: Optional[str] = None  # Optional field for store email 
     signature: Optional[str] = None 
 
     def _generate_stable_payload(self) -> bytes:
